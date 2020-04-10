@@ -1,0 +1,23 @@
+language: generic
+
+sudo: required
+
+services:
+  - docker
+
+before_install:
+  - docker build -t mlossmann/client-react -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true mlossmann/client-react npm run test -- --coverage
+
+after_success:
+  - docker build -t mlossmann/multi-client ./client
+  - docker build -t mlossmann/multi-nginx ./nginx
+  - docker build -t mlossmann/multi-server ./server
+  - docker build -t mlossmann/multi-worker ./worker
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  - docker push mlossmann/multi-client
+  - docker push mlossmann/multi-nginx
+  - docker push mlossmann/multi-server
+  - docker push mlossmann/multi-worker
